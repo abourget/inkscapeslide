@@ -1,4 +1,9 @@
 #!/usr/bin/python
+# -=- encoding: utf-8 -=-
+# Author: Alexandre Bourget
+# Copyright (c) 2008: Alexandre Bourget
+# LICENSE: GPLv3
+
 
 import lxml.etree
 import sys
