@@ -12,7 +12,7 @@ import os
 
 
 # Grab user arguments
-if len(sys.argv) < 2:
+if len(sys.argv) < 2 or sys.argv[1].startswith('--'):
     print "Usage: %s [svgfilename]" % sys.argv[0]
     sys.exit(1)
 
@@ -38,7 +38,7 @@ doc = lxml.etree.fromstring(cnt)
 layers = [x for x in doc.iterdescendants(tag='{http://www.w3.org/2000/svg}g') if x.attrib.get('{http://www.inkscape.org/namespaces/inkscape}groupmode', False) == 'layer']
 
 # Scan the 'content' layer
-content_layer = [x for x in layers if x.attrib.get('{http://www.inkscape.org/namespaces/inkscape}label', False) == 'content']
+content_layer = [x for x in layers if x.attrib.get('{http://www.inkscape.org/namespaces/inkscape}label', False).lower() == 'content']
 
 if not content_layer:
     print "No 'content'-labeled layer."
@@ -61,9 +61,20 @@ content = content_layer[0]
 #   take all the layer names separated by ','..
 preslides = [x.text for x in content.findall('{http://www.w3.org/2000/svg}text/{http://www.w3.org/2000/svg}tspan') if x.text]
 
+
+if not bool(preslides):
+    print "Make sure you have a text box (with no flowRect) in the 'content'"
+    print "layer, and rerun this program."
+    sys.exit(1)
+
+
+print preslides
+
+
 slides = []
 for sl in preslides:
-    slides.append([x.strip() for x in sl.split(',')])
+    if sl:
+        slides.append([x.strip() for x in sl.split(',')])
 
 for i, slide in enumerate(slides):
     # Hide all layers
