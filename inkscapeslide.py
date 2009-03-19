@@ -59,7 +59,7 @@ content = content_layer[0]
 
 # Find the text stuff, everythign starting with SLIDE:
 #   take all the layer names separated by ','..
-preslides = [x.text for x in content.findall('{http://www.w3.org/2000/svg}text/{http://www.w3.org/2000/svg}tspan')]
+preslides = [x.text for x in content.findall('{http://www.w3.org/2000/svg}text/{http://www.w3.org/2000/svg}tspan') if x.text]
 
 slides = []
 for sl in preslides:
