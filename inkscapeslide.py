@@ -4,6 +4,15 @@
 # Copyright (c) 2008: Alexandre Bourget 
 # LICENSE: GPLv3
 
+# How to use this script
+# ------------------------
+# Create a "content" labeled layer and put a text box (no flowRect), with each
+# line looking like:
+#
+#   background, layer1
+#   background, layer2
+#   background, layer2, layer3
+
 
 import lxml.etree
 import sys
@@ -17,14 +26,6 @@ if len(sys.argv) < 2 or sys.argv[1].startswith('--'):
     sys.exit(1)
 
 FILENAME = sys.argv[1]
-
-
-# Verify pdfjoin exists in PATH
-err = os.system('which pdfjoin > /dev/null')
-
-if err:
-    print "Please install pdfjam, which provides the required 'pdfjoin' program."
-    sys.exit(1)
     
 
 # Take the Wireframes.svg
@@ -41,9 +42,8 @@ layers = [x for x in doc.iterdescendants(tag='{http://www.w3.org/2000/svg}g') if
 content_layer = [x for x in layers if x.attrib.get('{http://www.inkscape.org/namespaces/inkscape}label', False).lower() == 'content']
 
 if not content_layer:
-    print "No 'content'-labeled layer."
-    print "Create a 'content'-labeled layer and put a text box (no flowRect),"
-    print "with each line looking like:"
+    print "No 'content'-labeled layer. Create a 'content'-labeled layer and "\
+          "put a text box (no flowRect), with each line looking like:"
     print ""
     print "   background, layer1"
     print "   background, layer2"
@@ -63,8 +63,8 @@ preslides = [x.text for x in content.findall('{http://www.w3.org/2000/svg}text/{
 
 
 if not bool(preslides):
-    print "Make sure you have a text box (with no flowRect) in the 'content'"
-    print "layer, and rerun this program."
+    print "Make sure you have a text box (with no flowRect) in the 'content' "\
+          "layer, and rerun this program."
     sys.exit(1)
 
 
@@ -80,15 +80,19 @@ pdfslides = []
 for i, slide in enumerate(slides):
     # Hide all layers
     for l in layers:
-    	# Set display mode to none
-        l.attrib['style'] = re.sub(r'(.*display:)([a-zA-Z]*)(.*)', r'\1none\3', 
-                                   l.attrib['style'])
+        # Set display mode to none
+        try:
+            l.attrib['style'] = re.sub(r'(.*display:)([a-zA-Z]*)(.*)',
+                                       r'\1none\3', l.attrib['style'])
+        except KeyError, e:
+            # The 'style' attibut doesn't exist. Create one
+            l.set('style','display:none')
 
     # Show only slide layers
     for l in layers:
         if l.attrib.get('{http://www.inkscape.org/namespaces/inkscape}label') in slide:
-	    # Set display mode to inline
-    	    l.attrib['style'] = re.sub(r'(.*display:)([a-zA-Z]*)(.*)',
+            # Set display mode to inline
+            l.attrib['style'] = re.sub(r'(.*display:)([a-zA-Z]*)(.*)',
                                        r'\1inline\3', l.attrib['style'])
     
     svgslide = "%s.p%d.svg" % (FILENAME, i)
@@ -105,12 +109,27 @@ for i, slide in enumerate(slides):
 
     print "Generated page %d." % (i+1)
 
-# In the end, run: pdfjoin wireframes.p*.pdf -o Wireframes.pdf
-os.system("pdfjoin --outfile %s.pdf %s" % (FILENAME, " ".join(pdfslides)))
+# Join PDFs
+joinedpdf = False
+# Verify pdfjoin exists in PATH
+if not os.system('which pdfjoin > /dev/null'):
+    # In the end, run: pdfjoin wireframes.p*.pdf -o Wireframes.pdf
+    print "Using 'pdfsam' to join PDFs"
+    os.system("pdfjoin --outfile %s.pdf %s" % (FILENAME.split(".svg")[0],
+                                               " ".join(pdfslides)))
+    joinedpdf = True
+
+# Verify pdftk exists in PATH
+elif not os.system('which pdftk > /dev/null'):
+    # run: pdftk in1.pdf in2.pdf cat output Wireframes.pdf
+    print "Using 'pdftk' to join PDFs"
+    os.system("pdftk %s cat output %s.pdf" % (" ".join(pdfslides),
+                                               FILENAME.split(".svg")[0]))
+    joinedpdf = True
+else:
+    print "Please install pdfjam or pdftk to join PDFs."
 
 # Clean up
-for pdfslide in pdfslides:
-    os.unlink(pdfslide)
-
-
-
+if joinedpdf:
+    for pdfslide in pdfslides:
+        os.unlink(pdfslide)
