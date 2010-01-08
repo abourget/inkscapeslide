@@ -95,13 +95,13 @@ for i, slide in enumerate(slides):
             l.attrib['style'] = re.sub(r'(.*display:)([a-zA-Z]*)(.*)',
                                        r'\1inline\3', l.attrib['style'])
     
-    svgslide = "%s.p%d.svg" % (FILENAME, i)
-    pdfslide = "%s.p%d.pdf" % (FILENAME, i)
+    svgslide = os.path.abspath(os.path.join(os.curdir, "%s.p%d.svg" % (FILENAME, i)))
+    pdfslide = os.path.abspath(os.path.join(os.curdir, "%s.p%d.pdf" % (FILENAME, i)))
     # Write the XML to file, "wireframes.p1.svg"
     f = open(svgslide, 'w')
     f.write(lxml.etree.tostring(doc))
     f.close()
-    
+
     # Run inkscape -A wireframes.p1.pdf wireframes.p1.svg
     os.system("inkscape -A %s %s" % (pdfslide, svgslide))
     os.unlink(svgslide)
@@ -111,8 +111,31 @@ for i, slide in enumerate(slides):
 
 # Join PDFs
 joinedpdf = False
+has_pyPdf = False
+try:
+    import pyPdf
+    has_pyPdf = True
+except:
+    pass
+
+if has_pyPdf:
+    print "Using 'pyPdf' to join PDFs"
+    output = pyPdf.PdfFileWriter()
+    inputfiles = []
+    for slide in pdfslides:
+        inputstream = file(slide, "rb")
+        inputfiles.append(inputstream)
+        input = pyPdf.PdfFileReader(inputstream)
+        output.addPage(input.getPage(0))
+    outputStream = file("%s.pdf" % FILENAME.split(".svg")[0], "wb")
+    output.write(outputStream)
+    outputStream.close()
+    for f in inputfiles:
+        f.close()
+    joinedpdf = True
+
 # Verify pdfjoin exists in PATH
-if not os.system('which pdfjoin > /dev/null'):
+elif not os.system('which pdfjoin > /dev/null'):
     # In the end, run: pdfjoin wireframes.p*.pdf -o Wireframes.pdf
     print "Using 'pdfsam' to join PDFs"
     os.system("pdfjoin --outfile %s.pdf %s" % (FILENAME.split(".svg")[0],
@@ -127,7 +150,8 @@ elif not os.system('which pdftk > /dev/null'):
                                                FILENAME.split(".svg")[0]))
     joinedpdf = True
 else:
-    print "Please install pdfjam or pdftk to join PDFs."
+    print "Please install pdfjam, pdftk or install the 'pyPdf' python package, "\
+          "to join PDFs."
 
 # Clean up
 if joinedpdf:
