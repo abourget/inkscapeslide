@@ -48,11 +48,11 @@ if not content_layer:
     print "   background, layer1"
     print "   background, layer2"
     print "   background, layer2, layer3"
-    #print "   +layer4"
+    print "   +layer4"
     print ""
-    #print "each name being the label of another layer. Lines starting with"
-    #print "a '+' will add to the layers of the preceding line, creating"
-    #print "incremental display"
+    print "each name being the label of another layer. Lines starting with"
+    print "a '+' will add to the layers of the preceding line, creating"
+    print "incremental display (note there must be no whitespace before '+')"
     sys.exit(1)
 
 content = content_layer[0]
@@ -74,6 +74,8 @@ print preslides
 slides = []
 for sl in preslides:
     if sl:
+        if sl.startswith('+'):
+            sl = ','.join(slides[-1]) + ',' + sl[1:]
         slides.append([x.strip() for x in sl.split(',')])
 
 pdfslides = []
