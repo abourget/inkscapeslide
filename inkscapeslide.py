@@ -12,6 +12,9 @@
 #   background, layer1
 #   background, layer2
 #   background, layer2, layer3
+#   +layer4
+#   background, layer2 * 0.5, layer3 * 0.5, layer5
+#
 
 
 import lxml.etree
@@ -48,11 +51,15 @@ if not content_layer:
     print "   background, layer1"
     print "   background, layer2"
     print "   background, layer2, layer3"
+    print "   background, layer2 * 0.5, layer3"
     print "   +layer4"
     print ""
     print "each name being the label of another layer. Lines starting with"
     print "a '+' will add to the layers of the preceding line, creating"
     print "incremental display (note there must be no whitespace before '+')"
+    print ""
+    print "The opacity of a layer can be set to 50% for example by adding "
+    print "'*0.5' after the layer name."
     sys.exit(1)
 
 content = content_layer[0]
@@ -71,34 +78,61 @@ if not bool(preslides):
 print preslides
 
 
-slides = []
+# Get the initial style attribute and keep it
+orig_style = {}
+for l in layers:
+    label = l.attrib.get('{http://www.inkscape.org/namespaces/inkscape}label') 
+    if 'style' not in l.attrib:
+        l.set('style', '')
+    # Save initial values
+    orig_style[label] = l.attrib['style']
+
+
+slides = [] # Contains seq of [('layer', opacity), ('layer', opacity), ..]
 for sl in preslides:
     if sl:
         if sl.startswith('+'):
             sl = ','.join(slides[-1]) + ',' + sl[1:]
-        slides.append([x.strip() for x in sl.split(',')])
+        sl_layers = {}
+        for layer in sl.split(','):
+            elements = layer.strip().split('*')
+            name = elements[0].strip()
+            opacity = None
+            if len(elements) == 2:
+                opacity = float(elements[1].strip())
+            sl_layers[name] = {'opacity': opacity}
+        slides.append(sl_layers)
+
+
+def set_style(el, style, value):
+    """Set the display: style, add it if it isn't there, don't touch the rest"""
+    if re.search(r'%s: ?[a-zA-Z0-9.]*' % style, el.attrib['style']):
+        el.attrib['style'] = re.sub(r'(.*%s: ?)([a-zA-Z0-9.]*)(.*)' % style,
+                                    r'\1%s\3' % value, el.attrib['style'])
+    else:
+        el.attrib['style'] = '%s:%s;%s' % (style, value, el.attrib['style'])
+    
 
 pdfslides = []
-for i, slide in enumerate(slides):
-    # Hide all layers
+for i, slide_layers in enumerate(slides):
     for l in layers:
-        # Set display mode to none
-        try:
-            l.attrib['style'] = re.sub(r'(.*display:)([a-zA-Z]*)(.*)',
-                                       r'\1none\3', l.attrib['style'])
-        except KeyError, e:
-            # The 'style' attibut doesn't exist. Create one
-            l.set('style','display:none')
+        label = l.attrib.get('{http://www.inkscape.org/namespaces/inkscape}label')
+        # Set display mode to original
+        l.set('style', orig_style[label])
 
-    # Show only slide layers
-    for l in layers:
-        if l.attrib.get('{http://www.inkscape.org/namespaces/inkscape}label') in slide:
-            # Set display mode to inline
-            l.attrib['style'] = re.sub(r'(.*display:)([a-zA-Z]*)(.*)',
-                                       r'\1inline\3', l.attrib['style'])
-    
-    svgslide = os.path.abspath(os.path.join(os.curdir, "%s.p%d.svg" % (FILENAME, i)))
-    pdfslide = os.path.abspath(os.path.join(os.curdir, "%s.p%d.pdf" % (FILENAME, i)))
+        # Don't show it by default...
+        set_style(l, 'display', 'none')
+
+        if label in slide_layers:
+            set_style(l, 'display', 'inline')
+            opacity = slide_layers[label]['opacity']
+            if opacity:
+                set_style(l, 'opacity', str(opacity))
+        print l.attrib['style']
+    svgslide = os.path.abspath(os.path.join(os.curdir,
+                                            "%s.p%d.svg" % (FILENAME, i)))
+    pdfslide = os.path.abspath(os.path.join(os.curdir,
+                                            "%s.p%d.pdf" % (FILENAME, i)))
     # Write the XML to file, "wireframes.p1.svg"
     f = open(svgslide, 'w')
     f.write(lxml.etree.tostring(doc))
