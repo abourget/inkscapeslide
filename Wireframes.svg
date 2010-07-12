@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
+
 <svg
    xmlns:dc="http://purl.org/dc/elements/1.1/"
    xmlns:cc="http://creativecommons.org/ns#"
@@ -12,7 +13,7 @@
    height="297mm"
    id="svg2"
    sodipodi:version="0.32"
-   inkscape:version="0.46"
+   inkscape:version="0.47 r22583"
    sodipodi:docname="Wireframes.svg"
    inkscape:output_extension="org.inkscape.output.svg.inkscape"
    version="1.0"
@@ -36,14 +37,15 @@
      inkscape:pageshadow="2"
      inkscape:zoom="0.7"
      inkscape:cx="206.97917"
-     inkscape:cy="729.20908"
+     inkscape:cy="672.06622"
      inkscape:document-units="px"
      inkscape:current-layer="layer4"
      showgrid="false"
      inkscape:window-width="1090"
      inkscape:window-height="785"
      inkscape:window-x="107"
-     inkscape:window-y="106" />
+     inkscape:window-y="59"
+     inkscape:window-maximized="0" />
   <metadata
      id="metadata7">
     <rdf:RDF>
@@ -116,19 +118,47 @@
        style="display:inline">
       <text
          xml:space="preserve"
-         style="font-size:18px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;writing-mode:lr-tb;text-anchor:start;opacity:1;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1;stroke-linecap:round;stroke-linejoin:miter;marker:none;marker-start:none;marker-mid:none;marker-end:none;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:Arial;-inkscape-font-specification:Arial"
-         x="-159.99998"
-         y="96.647903"
+         style="font-size:18px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:Arial;-inkscape-font-specification:Arial"
+         x="-306.85712"
+         y="88.647903"
          id="text3505"
          sodipodi:linespacing="125%"><tspan
            sodipodi:role="line"
-           x="-159.99998"
-           y="96.647903"
+           x="-306.85712"
+           y="88.647903"
            id="tspan3513">background, p1</tspan><tspan
            sodipodi:role="line"
-           x="-159.99998"
-           y="119.1479"
-           id="tspan3548">background, p2</tspan></text>
+           x="-306.85712"
+           y="111.1479"
+           id="tspan3548">background, p2</tspan><tspan
+           sodipodi:role="line"
+           x="-306.85712"
+           y="133.6479"
+           id="tspan2834">background, p1 * 0.5, p2</tspan><tspan
+           sodipodi:role="line"
+           x="-306.85712"
+           y="156.1479"
+           id="tspan2835">background, p1 * 0.2, p2 * 0.2</tspan><tspan
+           sodipodi:role="line"
+           x="-306.85712"
+           y="178.6479"
+           id="tspan2837">background, p1 * 0.1, p2 * 0.1</tspan><tspan
+           sodipodi:role="line"
+           x="-306.85712"
+           y="201.1479"
+           id="tspan2839">background, p1 * 0.7</tspan><tspan
+           sodipodi:role="line"
+           x="-306.85712"
+           y="223.6479"
+           id="tspan2841">+ p2 * 0.8</tspan><tspan
+           sodipodi:role="line"
+           x="-306.85712"
+           y="246.1479"
+           id="tspan2843">+ p1 * 1.0</tspan><tspan
+           sodipodi:role="line"
+           x="-306.85712"
+           y="268.64789"
+           id="tspan2845">+ p2 * 1.0</tspan></text>
     </g>
   </g>
   <g
