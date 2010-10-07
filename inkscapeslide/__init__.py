@@ -21,6 +21,7 @@ import lxml.etree
 import sys
 import os
 import re
+from optparse import OptionParser
 
 
 def main():
@@ -28,10 +29,9 @@ def main():
     # HIDE DEPRECATION WARINGS ONLY IN RELEASES. SHOW THEM IN DEV. TRUNKS
     warnings.filterwarnings('ignore', category=DeprecationWarning)
 
-    # Grab user arguments
-    if len(sys.argv) < 2 or sys.argv[1].startswith('--'):
-        print "Usage: %s [svgfilename]" % sys.argv[0]
-        sys.exit(1)
+    parser = OptionParser()
+    parser.add_option("-i", "--imageexport", action="store_true", dest="imageexport", default=False, help="Use PNG files as export content")
+    (options, args) = parser.parse_args()
 
     FILENAME = sys.argv[1]
 
@@ -143,61 +143,82 @@ def main():
                                                 "%s.p%d.svg" % (FILENAME, i)))
         pdfslide = os.path.abspath(os.path.join(os.curdir,
                                                 "%s.p%d.pdf" % (FILENAME, i)))
+        # Use the correct extension if using images
+        if options.imageexport:
+            pdfslide = os.path.abspath(os.path.join(os.curdir,
+                                                "%s.p%d.png" % (FILENAME, i)))
+
         # Write the XML to file, "wireframes.p1.svg"
         f = open(svgslide, 'w')
         f.write(lxml.etree.tostring(doc))
         f.close()
 
-        # Run inkscape -A wireframes.p1.pdf wireframes.p1.svg
-        os.system("inkscape -A %s %s" % (pdfslide, svgslide))
+        # Determine whether to export pdf's or images (e.g. inkscape -A versus inkscape -e)
+        cmd = "inkscape -A %s %s" % (pdfslide, svgslide)
+        if options.imageexport:
+            cmd = "inkscape -d 180 -e %s %s" % (pdfslide, svgslide)
+
+        os.system(cmd)
         os.unlink(svgslide)
         pdfslides.append(pdfslide)
 
         print "Generated page %d." % (i+1)
 
-    # Join PDFs
     joinedpdf = False
-    has_pyPdf = False
-    try:
-        import pyPdf
-        has_pyPdf = True
-    except:
-        pass
+    outputFilename = "%s.pdf" % FILENAME.split(".svg")[0]
+    outputDir = os.path.dirname(outputFilename)
+    print "Output file %s" % outputFilename
 
-    if has_pyPdf:
-        print "Using 'pyPdf' to join PDFs"
-        output = pyPdf.PdfFileWriter()
-        inputfiles = []
-        for slide in pdfslides:
-            inputstream = file(slide, "rb")
-            inputfiles.append(inputstream)
-            input = pyPdf.PdfFileReader(inputstream)
-            output.addPage(input.getPage(0))
-        outputStream = file("%s.pdf" % FILENAME.split(".svg")[0], "wb")
-        output.write(outputStream)
-        outputStream.close()
-        for f in inputfiles:
-            f.close()
-        joinedpdf = True
-
-    # Verify pdfjoin exists in PATH
-    elif not os.system('which pdfjoin > /dev/null'):
-        # In the end, run: pdfjoin wireframes.p*.pdf -o Wireframes.pdf
-        print "Using 'pdfsam' to join PDFs"
-        os.system("pdfjoin --outfile %s.pdf %s" % (FILENAME.split(".svg")[0],
-                                                   " ".join(pdfslides)))
-        joinedpdf = True
-
-    # Verify pdftk exists in PATH
-    elif not os.system('which pdftk > /dev/null'):
-        # run: pdftk in1.pdf in2.pdf cat output Wireframes.pdf
-        print "Using 'pdftk' to join PDFs"
-        os.system("pdftk %s cat output %s.pdf" % (" ".join(pdfslides),
-                                                   FILENAME.split(".svg")[0]))
-        joinedpdf = True
+    if options.imageexport:
+        if not os.system('which convert > /dev/null'):
+            print "Using 'convert' to join PNG's"
+            os.system("convert %s -resample 180 %s" % (os.path.join(outputDir, "*.png"), outputFilename))
+            joinedpdf = True
+        else:
+            print "Please install ImageMagick to provide the 'convert' utility"
     else:
-        print "Please install pdfjam, pdftk or install the 'pyPdf' python " \
-            "package, to join PDFs."
+        # Join PDFs
+        has_pyPdf = False
+        try:
+            import pyPdf
+            has_pyPdf = True
+        except:
+            pass
+
+        if has_pyPdf:
+            print "Using 'pyPdf' to join PDFs"
+            output = pyPdf.PdfFileWriter()
+            inputfiles = []
+            for slide in pdfslides:
+                inputstream = file(slide, "rb")
+                inputfiles.append(inputstream)
+                input = pyPdf.PdfFileReader(inputstream)
+                output.addPage(input.getPage(0))
+            outputStream = file(outputFilename, "wb")
+            output.write(outputStream)
+            outputStream.close()
+            for f in inputfiles:
+                f.close()
+            joinedpdf = True
+
+        # Verify pdfjoin exists in PATH
+        elif not os.system('which pdfjoin > /dev/null'):
+            # In the end, run: pdfjoin wireframes.p*.pdf -o Wireframes.pdf
+            print "Using 'pdfsam' to join PDFs"
+            os.system("pdfjoin --outfile %s.pdf %s" % (FILENAME.split(".svg")[0],
+                                                       " ".join(pdfslides)))
+            joinedpdf = True
+
+        # Verify pdftk exists in PATH
+        elif not os.system('which pdftk > /dev/null'):
+            # run: pdftk in1.pdf in2.pdf cat output Wireframes.pdf
+            print "Using 'pdftk' to join PDFs"
+            os.system("pdftk %s cat output %s.pdf" % (" ".join(pdfslides),
+                                                       FILENAME.split(".svg")[0]))
+            joinedpdf = True
+        else:
+            print "Please install pdfjam, pdftk or install the 'pyPdf' python " \
+                "package, to join PDFs."
 
     # Clean up
     if joinedpdf:
