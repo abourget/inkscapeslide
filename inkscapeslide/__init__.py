@@ -20,6 +20,7 @@
 import lxml.etree
 import sys
 import os
+import subprocess
 import re
 from optparse import OptionParser
 
@@ -29,11 +30,12 @@ def main():
     # HIDE DEPRECATION WARINGS ONLY IN RELEASES. SHOW THEM IN DEV. TRUNKS
     warnings.filterwarnings('ignore', category=DeprecationWarning)
 
-    parser = OptionParser()
+    usage = "Usage: %prog [options] svgfilename"
+    parser = OptionParser(usage=usage)
     parser.add_option("-i", "--imageexport", action="store_true", dest="imageexport", default=False, help="Use PNG files as export content")
     (options, args) = parser.parse_args()
 
-    FILENAME = sys.argv[1]
+    FILENAME = args[0]
 
 
     # Take the Wireframes.svg
@@ -146,7 +148,7 @@ def main():
         # Use the correct extension if using images
         if options.imageexport:
             pdfslide = os.path.abspath(os.path.join(os.curdir,
-                                                "%s.p%d.png" % (FILENAME, i)))
+                                                ".inkscapeslide_%s.p%d.png" % (FILENAME, i)))
 
         # Write the XML to file, "wireframes.p1.svg"
         f = open(svgslide, 'w')
@@ -158,7 +160,8 @@ def main():
         if options.imageexport:
             cmd = "inkscape -d 180 -e %s %s" % (pdfslide, svgslide)
 
-        os.system(cmd)
+        # Using subprocess to hide stdout
+        subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).communicate()
         os.unlink(svgslide)
         pdfslides.append(pdfslide)
 
@@ -170,10 +173,21 @@ def main():
     print "Output file %s" % outputFilename
 
     if options.imageexport:
+        # Use ImageMagick to combine the PNG files into a PDF
         if not os.system('which convert > /dev/null'):
             print "Using 'convert' to join PNG's"
-            os.system("convert %s -resample 180 %s" % (os.path.join(outputDir, "*.png"), outputFilename))
-            joinedpdf = True
+            pngPath = os.path.join(outputDir, ".inkscapeslide_*.png")
+            proc = subprocess.Popen("convert %s -resample 180 %s" % (pngPath, outputFilename),
+                                    shell=True,
+                                    stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE)
+            # See if the command succeeded
+            stdout_value, stderr_value = proc.communicate()
+            if proc.returncode:
+                print "\nERROR: convert command failed:"
+                print stderr_value
+            else:
+                joinedpdf = True
         else:
             print "Please install ImageMagick to provide the 'convert' utility"
     else:
