@@ -148,7 +148,7 @@ def main():
         # Use the correct extension if using images
         if options.imageexport:
             pdfslide = os.path.abspath(os.path.join(os.curdir,
-                                                ".inkscapeslide_%s.p%d.png" % (FILENAME, i)))
+                                                ".inkscapeslide_%s.p%05d.png" % (FILENAME, i)))
 
         # Write the XML to file, "wireframes.p1.svg"
         f = open(svgslide, 'w')
