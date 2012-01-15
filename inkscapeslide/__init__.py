@@ -1,38 +1,15 @@
 #!/usr/bin/python
 # -=- encoding: utf-8 -=-
+
 """
 Author: Alexandre Bourget
 Copyright (c) 2008: Alexandre Bourget
 LICENSE: GPLv3
 
-How to use this script
-========================
-Create a "content" labeled layer and put a text box (no flowRect), with each
-line looking like:
+inkscapeslide is a simple tool to generate slides from inkscape files.
 
-  background, layer1
-  background, layer2
-  background, layer2, layer3
-  +layer4
-  background, layer2 * 0.5, layer3 * 0.5, layer5
-
-print "No 'content'-labeled layer. Create a 'content'-labeled layer and "\
-      "put a text box (no flowRect), with each line looking like:"
-print ""
-print "   background, layer1"
-print "   background, layer2"
-print "   background, layer2, layer3"
-print "   background, layer2 * 0.5, layer3"
-print "   +layer4 * 0.5"
-print ""
-print "each name being the label of another layer. Lines starting with"
-print "a '+' will add to the layers of the preceding line, creating"
-print "incremental display (note there must be no whitespace before '+')"
-print ""
-print "The opacity of a layer can be set to 50% for example by adding "
-print "'*0.5' after the layer name."
+See --help for more.
 """
-
 
 import lxml.etree
 import sys
@@ -48,7 +25,29 @@ def main():
     warnings.filterwarnings('ignore', category=DeprecationWarning)
 
     # optparse setup
-    usage = "Usage: %prog [options] svgfilename"
+    usage = """
+%prog [options] svgfilename
+
+inkscapeslide is a simple tool to generate slides from inkscape files.
+
+Create a 'content'-labeled layer and put a text box (no flowRect), with
+each line looking like:
+
+   background, layer1
+   background, layer2
+   background, layer2, layer3
+   background, layer2 * 0.5, layer
+   +layer4 * 0.5
+
+Each name being the label of a layer. Lines starting with a '+' will add
+the named layer to the layers of the preceding line, creating
+incremental display (note there must be no whitespace before '+')
+
+The opacity of a layer can be changed by adding '*[0., 1]' after the
+layer name. The opacity must be between 0 and 1. Example:
+
+    backgound, mylayer * 0.5
+    """
     parser = OptionParser(usage=usage)
     parser.add_option("-i", "--imageexport",
             action="store_true", dest="imageexport", default=False,
