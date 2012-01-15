@@ -15,6 +15,22 @@ line looking like:
   background, layer2, layer3
   +layer4
   background, layer2 * 0.5, layer3 * 0.5, layer5
+
+print "No 'content'-labeled layer. Create a 'content'-labeled layer and "\
+      "put a text box (no flowRect), with each line looking like:"
+print ""
+print "   background, layer1"
+print "   background, layer2"
+print "   background, layer2, layer3"
+print "   background, layer2 * 0.5, layer3"
+print "   +layer4 * 0.5"
+print ""
+print "each name being the label of another layer. Lines starting with"
+print "a '+' will add to the layers of the preceding line, creating"
+print "incremental display (note there must be no whitespace before '+')"
+print ""
+print "The opacity of a layer can be set to 50% for example by adding "
+print "'*0.5' after the layer name."
 """
 
 
@@ -40,76 +56,61 @@ def main():
     (options, args) = parser.parse_args()
     FILENAME = args[0]
 
-    # Take the Wireframes.svg
+    # Load the file
     f = open(FILENAME)
     cnt = f.read()
     f.close()
-
     doc = lxml.etree.fromstring(cnt)
 
     # Get all layers
-    layers = [x for x in doc.iterdescendants(tag='{http://www.w3.org/2000/svg}g') if x.attrib.get('{http://www.inkscape.org/namespaces/inkscape}groupmode', False) == 'layer']
+    ink_groupmode = '{http://www.inkscape.org/namespaces/inkscape}groupmode'
+    w3c_svg_tag = '{http://www.w3.org/2000/svg}g'
+    layers = [layer for layer in doc.iterdescendants(tag=w3c_svg_tag)
+            if layer.attrib.get(ink_groupmode, False) == 'layer']
 
     # inkscape names for certain things in the svg
     ink_label = '{http://www.inkscape.org/namespaces/inkscape}label'
 
     # Scan the 'content' layer
-    content_layer = [x for x in layers if x.attrib.get(ink_label, False).lower() == 'content']
+    content_layer = [layer for layer in layers
+            if layer.attrib.get(ink_label, False).lower() == 'content']
 
     if not content_layer:
-        print "No 'content'-labeled layer. Create a 'content'-labeled layer and "\
-              "put a text box (no flowRect), with each line looking like:"
-        print ""
-        print "   background, layer1"
-        print "   background, layer2"
-        print "   background, layer2, layer3"
-        print "   background, layer2 * 0.5, layer3"
-        print "   +layer4 * 0.5"
-        print ""
-        print "each name being the label of another layer. Lines starting with"
-        print "a '+' will add to the layers of the preceding line, creating"
-        print "incremental display (note there must be no whitespace before '+')"
-        print ""
-        print "The opacity of a layer can be set to 50% for example by adding "
-        print "'*0.5' after the layer name."
+        print "No 'content'-labeled layer found. See --help for more"
         sys.exit(1)
 
     content = content_layer[0]
 
     # Find the text stuff, everything starting with SLIDE:
     #   take all the layer names separated by ','..
-    preslides = [x.text for x in content.findall('{http://www.w3.org/2000/svg}text/{http://www.w3.org/2000/svg}tspan') if x.text]
-
+    ink_tspan = '{http://www.w3.org/2000/svg}text/{http://www.w3.org/2000/svg}tspan'
+    preslides = [x.text for x in content.findall(ink_tspan) if x.text]
 
     if not bool(preslides):
         print "Make sure you have a text box (with no flowRect) in the " \
             "'content' layer, and rerun this program."
         sys.exit(1)
 
-
-    #print preslides
-
-
     # Get the initial style attribute and keep it
     orig_style = {}
-    for l in layers:
-        label = l.attrib.get(ink_label)
-        if 'style' not in l.attrib:
-            l.set('style', '')
+    for layer in layers:
+        label = layer.attrib.get(ink_label)
+        if 'style' not in layer.attrib:
+            layer.set('style', '')
         # Save initial values
-        orig_style[label] = l.attrib['style']
+        orig_style[label] = layer.attrib['style']
 
-
-    slides = [] # Contains seq of [('layer', opacity), ('layer', opacity), ..]
-    for sl in preslides:
-        if sl:
-            if sl.startswith('+'):
-                sl = sl[1:]
+    # slides contains seq of [('layer', opacity), ('layer', opacity), ..]
+    slides = []
+    for slide in preslides:
+        if slide:
+            if slide.startswith('+'):
+                slide = slide[1:]
                 sl_layers = slides[-1].copy()
             else:
                 sl_layers = {}
 
-            for layer in sl.split(','):
+            for layer in slide.split(','):
                 elements = layer.strip().split('*')
                 name = elements[0].strip()
                 opacity = None
@@ -118,18 +119,18 @@ def main():
                 sl_layers[name] = {'opacity': opacity}
             slides.append(sl_layers)
 
-
     def set_style(el, style, value):
         """
         Set the display: style, add it if it isn't there, don't touch the
         rest.
         """
         if re.search(r'%s: ?[a-zA-Z0-9.]*' % style, el.attrib['style']):
-            el.attrib['style'] = re.sub(r'(.*%s: ?)([a-zA-Z0-9.]*)(.*)' % style,
-                                        r'\1%s\3' % value, el.attrib['style'])
+            el.attrib['style'] = re.sub(
+                    r'(.*%s: ?)([a-zA-Z0-9.]*)(.*)' % style,
+                    r'\1%s\3' % value, el.attrib['style'])
         else:
-            el.attrib['style'] = '%s:%s;%s' % (style, value, el.attrib['style'])
-
+            el.attrib['style'] = '%s:%s;%s' % \
+                    (style, value, el.attrib['style'])
 
     pdfslides = []
     for i, slide_layers in enumerate(slides):
@@ -154,14 +155,15 @@ def main():
         # Use the correct extension if using images
         if options.imageexport:
             pdfslide = os.path.abspath(os.path.join(os.curdir,
-                                                ".inkscapeslide_%s.p%05d.png" % (FILENAME, i)))
+                    ".inkscapeslide_%s.p%05d.png" % (FILENAME, i)))
 
         # Write the XML to file, "wireframes.p1.svg"
         f = open(svgslide, 'w')
         f.write(lxml.etree.tostring(doc))
         f.close()
 
-        # Determine whether to export pdf's or images (e.g. inkscape -A versus inkscape -e)
+        # Determine whether to export pdf's or images (e.g. inkscape -A versus
+        # inkscape -e)
         cmd = "inkscape -A %s %s" % (pdfslide, svgslide)
         if options.imageexport:
             cmd = "inkscape -d 180 -e %s %s" % (pdfslide, svgslide)
@@ -171,7 +173,7 @@ def main():
         os.unlink(svgslide)
         pdfslides.append(pdfslide)
 
-        print "Generated page %d." % (i+1)
+        print "Generated page %d." % (i + 1)
 
     joinedpdf = False
     outputFilename = "%s.pdf" % FILENAME.split(".svg")[0]
@@ -183,10 +185,11 @@ def main():
         if not os.system('which convert > /dev/null'):
             print "Using 'convert' to join PNG's"
             pngPath = os.path.join(outputDir, ".inkscapeslide_*.png")
-            proc = subprocess.Popen("convert %s -resample 180 %s" % (pngPath, outputFilename),
-                                    shell=True,
-                                    stdout=subprocess.PIPE,
-                                    stderr=subprocess.PIPE)
+            proc = subprocess.Popen(
+                    "convert %s -resample 180 %s" % (pngPath, outputFilename),
+                    shell=True,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE)
             # See if the command succeeded
             stdout_value, stderr_value = proc.communicate()
             if proc.returncode:
@@ -225,8 +228,8 @@ def main():
         elif not os.system('which pdfjoin > /dev/null'):
             # In the end, run: pdfjoin wireframes.p*.pdf -o Wireframes.pdf
             print "Using 'pdfsam' to join PDFs"
-            os.system("pdfjoin --outfile %s.pdf %s" % (FILENAME.split(".svg")[0],
-                                                       " ".join(pdfslides)))
+            os.system("pdfjoin --outfile %s.pdf %s" %
+                    (FILENAME.split(".svg")[0], " ".join(pdfslides)))
             joinedpdf = True
 
         # Verify pdftk exists in PATH
@@ -234,11 +237,11 @@ def main():
             # run: pdftk in1.pdf in2.pdf cat output Wireframes.pdf
             print "Using 'pdftk' to join PDFs"
             os.system("pdftk %s cat output %s.pdf" % (" ".join(pdfslides),
-                                                       FILENAME.split(".svg")[0]))
+                    FILENAME.split(".svg")[0]))
             joinedpdf = True
         else:
-            print "Please install pdfjam, pdftk or install the 'pyPdf' python " \
-                "package, to join PDFs."
+            print "Please install pdfjam, pdftk or install the 'pyPdf'" \
+                    "python package, to join PDFs."
 
     # Clean up
     if joinedpdf:
