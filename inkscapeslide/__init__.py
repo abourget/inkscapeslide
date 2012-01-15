@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -=- encoding: utf-8 -=-
-# Author: Alexandre Bourget 
-# Copyright (c) 2008: Alexandre Bourget 
+# Author: Alexandre Bourget
+# Copyright (c) 2008: Alexandre Bourget
 # LICENSE: GPLv3
 
 # How to use this script
@@ -88,7 +88,7 @@ def main():
     # Get the initial style attribute and keep it
     orig_style = {}
     for l in layers:
-        label = l.attrib.get('{http://www.inkscape.org/namespaces/inkscape}label') 
+        label = l.attrib.get('{http://www.inkscape.org/namespaces/inkscape}label')
         if 'style' not in l.attrib:
             l.set('style', '')
         # Save initial values
