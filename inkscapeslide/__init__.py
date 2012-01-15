@@ -1,20 +1,21 @@
 #!/usr/bin/python
 # -=- encoding: utf-8 -=-
-# Author: Alexandre Bourget
-# Copyright (c) 2008: Alexandre Bourget
-# LICENSE: GPLv3
+"""
+Author: Alexandre Bourget
+Copyright (c) 2008: Alexandre Bourget
+LICENSE: GPLv3
 
-# How to use this script
-# ------------------------
-# Create a "content" labeled layer and put a text box (no flowRect), with each
-# line looking like:
-#
-#   background, layer1
-#   background, layer2
-#   background, layer2, layer3
-#   +layer4
-#   background, layer2 * 0.5, layer3 * 0.5, layer5
-#
+How to use this script
+========================
+Create a "content" labeled layer and put a text box (no flowRect), with each
+line looking like:
+
+  background, layer1
+  background, layer2
+  background, layer2, layer3
+  +layer4
+  background, layer2 * 0.5, layer3 * 0.5, layer5
+"""
 
 
 import lxml.etree
@@ -30,13 +31,14 @@ def main():
     # HIDE DEPRECATION WARINGS ONLY IN RELEASES. SHOW THEM IN DEV. TRUNKS
     warnings.filterwarnings('ignore', category=DeprecationWarning)
 
+    # optparse setup
     usage = "Usage: %prog [options] svgfilename"
     parser = OptionParser(usage=usage)
-    parser.add_option("-i", "--imageexport", action="store_true", dest="imageexport", default=False, help="Use PNG files as export content")
+    parser.add_option("-i", "--imageexport",
+            action="store_true", dest="imageexport", default=False,
+            help="Use PNG files as export content")
     (options, args) = parser.parse_args()
-
     FILENAME = args[0]
-
 
     # Take the Wireframes.svg
     f = open(FILENAME)
@@ -48,8 +50,11 @@ def main():
     # Get all layers
     layers = [x for x in doc.iterdescendants(tag='{http://www.w3.org/2000/svg}g') if x.attrib.get('{http://www.inkscape.org/namespaces/inkscape}groupmode', False) == 'layer']
 
+    # inkscape names for certain things in the svg
+    ink_label = '{http://www.inkscape.org/namespaces/inkscape}label'
+
     # Scan the 'content' layer
-    content_layer = [x for x in layers if x.attrib.get('{http://www.inkscape.org/namespaces/inkscape}label', False).lower() == 'content']
+    content_layer = [x for x in layers if x.attrib.get(ink_label, False).lower() == 'content']
 
     if not content_layer:
         print "No 'content'-labeled layer. Create a 'content'-labeled layer and "\
@@ -88,7 +93,7 @@ def main():
     # Get the initial style attribute and keep it
     orig_style = {}
     for l in layers:
-        label = l.attrib.get('{http://www.inkscape.org/namespaces/inkscape}label')
+        label = l.attrib.get(ink_label)
         if 'style' not in l.attrib:
             l.set('style', '')
         # Save initial values
@@ -115,8 +120,9 @@ def main():
 
 
     def set_style(el, style, value):
-        """Set the display: style, add it if it isn't there, don't touch the
-        rest
+        """
+        Set the display: style, add it if it isn't there, don't touch the
+        rest.
         """
         if re.search(r'%s: ?[a-zA-Z0-9.]*' % style, el.attrib['style']):
             el.attrib['style'] = re.sub(r'(.*%s: ?)([a-zA-Z0-9.]*)(.*)' % style,
@@ -128,7 +134,7 @@ def main():
     pdfslides = []
     for i, slide_layers in enumerate(slides):
         for l in layers:
-            label = l.attrib.get('{http://www.inkscape.org/namespaces/inkscape}label')
+            label = l.attrib.get(ink_label)
             # Set display mode to original
             l.set('style', orig_style[label])
 
