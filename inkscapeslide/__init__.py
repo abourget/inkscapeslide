@@ -53,7 +53,11 @@ layer name. The opacity must be between 0 and 1. Example:
             action="store_true", dest="imageexport", default=False,
             help="Use PNG files as export content")
     (options, args) = parser.parse_args()
-    FILENAME = args[0]
+    try:
+        FILENAME = args[0]
+    except IndexError:
+        parser.print_help()
+        sys.exit(1)
 
     # Load the file
     f = open(FILENAME)
