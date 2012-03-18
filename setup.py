@@ -14,8 +14,10 @@ setup(
     author_email='alex@bourget.cc',
     url='http://projects.abourget.net',
     license='GPLv3',
-    install_requires=["pyPdf",
-                      ],
+    install_requires=[
+        "pyPdf",
+        "lxml",
+    ],
     packages=find_packages(exclude=['ez_setup']),
     include_package_data=True,
     test_suite='nose.collector',
