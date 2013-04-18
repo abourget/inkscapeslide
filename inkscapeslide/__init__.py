@@ -21,7 +21,7 @@ from optparse import OptionParser
 
 def main():
     import warnings
-    # HIDE DEPRECATION WARINGS ONLY IN RELEASES. SHOW THEM IN DEV. TRUNKS
+    # HIDE DEPRECATION WARNINGS ONLY IN RELEASES. SHOW THEM IN DEV. TRUNKS
     warnings.filterwarnings('ignore', category=DeprecationWarning)
 
     # optparse setup
@@ -46,7 +46,7 @@ incremental display (note there must be no whitespace before '+')
 The opacity of a layer can be changed by adding '*[0., 1]' after the
 layer name. The opacity must be between 0 and 1. Example:
 
-    backgound, mylayer * 0.5
+    background, mylayer * 0.5
     """
     parser = OptionParser(usage=usage)
     parser.add_option("-i", "--imageexport",
